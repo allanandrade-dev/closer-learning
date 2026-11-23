@@ -8,7 +8,7 @@ const vectors = {
   xpReward: 100,
 };
 
-function exactAnswers() {
+function exactAnswers(): { x: number; y: number }[] {
   return LEVEL1_TARGETS.map((point) => ({ x: point.x, y: point.y }));
 }
 
