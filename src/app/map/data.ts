@@ -3,7 +3,7 @@ import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { levels, progress } from "@/db/schema";
 
-/** Server-only read for /map. Import this from the map server component. */
+/** Server-only read of levels and one user's progress. Shared by /map and /level. */
 export async function getJourneySource(userId: string) {
   const levelRows = await db
     .select({
@@ -11,6 +11,7 @@ export async function getJourneySource(userId: string) {
       slug: levels.slug,
       order: levels.order,
       title: levels.title,
+      challengeType: levels.challengeType,
     })
     .from(levels)
     .orderBy(asc(levels.order));
