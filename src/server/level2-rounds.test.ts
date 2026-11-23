@@ -11,6 +11,7 @@ const dbMocks = vi.hoisted(() => {
   const results: unknown[] = [];
   const fromArgs: unknown[] = [];
   const orderByArgs: unknown[][] = [];
+  const selectProjections: unknown[] = [];
 
   function selectChain(take: () => unknown) {
     const chain: Record<string, unknown> = {};
@@ -33,7 +34,10 @@ const dbMocks = vi.hoisted(() => {
     return chain;
   }
 
-  const select = vi.fn(() => selectChain(() => results.shift()));
+  const select = vi.fn((projection: unknown) => {
+    selectProjections.push(projection);
+    return selectChain(() => results.shift());
+  });
   const insert = vi.fn(() => {
     const rows = results.shift();
     const chain: Record<string, unknown> = {};
@@ -56,7 +60,15 @@ const dbMocks = vi.hoisted(() => {
   };
   database.with.mockImplementation(() => database);
 
-  return { results, fromArgs, orderByArgs, select, insert, database };
+  return {
+    results,
+    fromArgs,
+    orderByArgs,
+    selectProjections,
+    select,
+    insert,
+    database,
+  };
 });
 
 vi.mock("next/navigation", () => ({
@@ -124,6 +136,7 @@ beforeEach(() => {
   dbMocks.results.length = 0;
   dbMocks.fromArgs.length = 0;
   dbMocks.orderByArgs.length = 0;
+  dbMocks.selectProjections.length = 0;
   vi.clearAllMocks();
   dbMocks.database.with.mockImplementation(() => dbMocks.database);
   vi.mocked(requireUser).mockResolvedValue({
@@ -185,19 +198,13 @@ test("getLevel2Rounds returns three rounds sorted by roundId with four sorted ca
   expect(JSON.stringify(result)).not.toMatch(/embedding|distance/i);
   expect(dbMocks.fromArgs.filter((table) => table === words)).toHaveLength(1);
   expect(dbMocks.orderByArgs).toEqual([[asc(words.roundId), asc(words.text)]]);
-  const wordSelect = dbMocks.select.mock.calls.find(
-    (call) =>
-      call[0] !== undefined &&
-      typeof call[0] === "object" &&
-      call[0] !== null &&
-      "roundId" in call[0],
+  const wordSelect = dbMocks.selectProjections.find(
+    (projection): projection is Record<string, unknown> =>
+      typeof projection === "object" &&
+      projection !== null &&
+      "roundId" in projection,
   );
-  expect(wordSelect?.[0]).toBeDefined();
-  expect(Object.keys(wordSelect?.[0] as object)).toEqual([
-    "roundId",
-    "role",
-    "text",
-  ]);
+  expect(Object.keys(wordSelect ?? {})).toEqual(["roundId", "role", "text"]);
 });
 
 test("unauthenticated getLevel2Rounds redirects before any database call", async () => {
@@ -219,13 +226,12 @@ test("a locked level throws and does not query words", async () => {
   await expect(getLevel2Rounds()).rejects.toThrow("This level is locked.");
   expect(dbMocks.fromArgs).not.toContain(words);
   expect(
-    dbMocks.select.mock.calls.some(
-      (call) =>
-        call[0] !== undefined &&
-        typeof call[0] === "object" &&
-        call[0] !== null &&
-        "text" in call[0] &&
-        "role" in call[0],
+    dbMocks.selectProjections.some(
+      (projection) =>
+        typeof projection === "object" &&
+        projection !== null &&
+        "text" in projection &&
+        "role" in projection,
     ),
   ).toBe(false);
 });
