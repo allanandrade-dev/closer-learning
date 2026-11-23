@@ -13,7 +13,9 @@ function assertFinitePoint(
   }
 }
 
-/** Euclidean distance and the 0–100 closeness score. Score is 0 once d >= 3. */
+const SCORE_RADIUS = 3;
+
+/** Euclidean distance and the 0-100 closeness score. Score is 0 once d >= 3. */
 export function distanceScore(
   user: { x: number; y: number },
   target: { x: number; y: number },
@@ -22,7 +24,10 @@ export function distanceScore(
   assertFinitePoint(target, "target");
 
   const distance = Math.hypot(user.x - target.x, user.y - target.y);
-  const score = Math.max(0, Math.round(100 * (1 - distance / 3)));
+  const score = Math.max(
+    0,
+    Math.round(100 * (1 - distance / SCORE_RADIUS)),
+  );
 
   return { distance, score };
 }
@@ -60,13 +65,14 @@ export function levelOneScore(rounds: number[]): number {
 export function isPassing(score: number, level: LevelRules): boolean {
   if (level.challengeType === "search") {
     // 1-based rank. Not-found is Infinity or 0 and fails.
-    // A found document passes when its rank is at least as good as passMark.
+    // A found document passes when rank <= passMark.
     return Number.isFinite(score) && score >= 1 && score <= level.passMark;
   }
 
   return Number.isFinite(score) && score >= level.passMark;
 }
 
+/** Level state after this attempt. `passed` stays true once any attempt has passed. */
 export type AttemptResult = {
   passed: boolean;
   bestScore: number;
@@ -116,7 +122,7 @@ export function applyAttempt(
       score,
       level.challengeType,
     ),
-    xpAwarded: alreadyPassed || !attemptPassed ? 0 : level.xpReward,
+    xpAwarded: (alreadyPassed || !attemptPassed) ? 0 : level.xpReward,
   };
 }
 

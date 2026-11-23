@@ -93,6 +93,14 @@ test("levelOneScore rejects a round count other than 3", () => {
   expect(() => levelOneScore([100, 83, 0, 40])).toThrow();
 });
 
+test("levelOneScore rejects a non-finite round", () => {
+  expect(() => levelOneScore([100, Number.NaN, 0])).toThrow();
+});
+
+test("distance is unsigned, so a point on the other side scores the same", () => {
+  expect(distanceScore({ x: 0, y: 0 }, { x: -1, y: 0 }).score).toBe(67);
+});
+
 test("embeddings: 2 of 3 passes and 1 of 3 fails", () => {
   expect(isPassing(2, embeddings)).toBe(true);
   expect(isPassing(3, embeddings)).toBe(true);
@@ -193,6 +201,21 @@ test("search keeps the lowest rank and stores 0 when nothing is found", () => {
     search,
   );
   expect(laterMiss).toEqual({ passed: true, bestScore: 3, xpAwarded: 0 });
+});
+
+test("a better search rank updates bestScore without paying XP again", () => {
+  const progress: Progress = { passed: true, bestScore: 3, xpEarned: 200 };
+
+  expect(applyAttempt(progress, 1, search)).toEqual({
+    passed: true,
+    bestScore: 1,
+    xpAwarded: 0,
+  });
+  expect(applyAttempt(progress, 4, search)).toEqual({
+    passed: true,
+    bestScore: 3,
+    xpAwarded: 0,
+  });
 });
 
 test("applyAttempt does not mutate its input", () => {
