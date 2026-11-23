@@ -6,6 +6,7 @@ import { LevelHeader } from "@/components/level/level-header";
 import { LevelPlay } from "@/components/level/level-play";
 import { getLesson, lessonsBySlug } from "@/content/levels";
 import { requireUser } from "@/server/auth";
+import { getLevel2Rounds } from "@/server/level2-rounds";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,9 @@ export default async function LevelPage({
   const cards = getLesson(decision.level.slug);
   if (!cards) redirect("/map");
 
+  const rounds =
+    decision.level.slug === "embeddings" ? await getLevel2Rounds() : [];
+
   return (
     <div className="min-h-svh bg-zinc-950 text-zinc-50">
       <LevelHeader
@@ -41,6 +45,7 @@ export default async function LevelPage({
         challengeType={decision.level.challengeType}
         passed={decision.passed}
         bestScore={decision.bestScore}
+        rounds={rounds}
       />
     </div>
   );

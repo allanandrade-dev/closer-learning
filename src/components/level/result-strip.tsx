@@ -104,3 +104,51 @@ export function ResultStrip({
     </div>
   );
 }
+
+type EmbeddingsResultStripProps = {
+  correctCount: number;
+  passed: boolean;
+  xpAwarded: number;
+  alreadyPassed: boolean;
+  onReplay: () => void;
+};
+
+/** Level 2 verdict. Plain text from the server result, with no count-up. */
+export function EmbeddingsResultStrip({
+  correctCount,
+  passed,
+  xpAwarded,
+  alreadyPassed,
+  onReplay,
+}: EmbeddingsResultStripProps) {
+  const repeatClear = alreadyPassed && xpAwarded === 0;
+  const message = repeatClear
+    ? "Already passed, no new XP"
+    : passed
+      ? `${correctCount} of 3 right · passed · +${xpAwarded} XP`
+      : `Not quite, ${correctCount} of 3. Try again.`;
+
+  return (
+    <div className="mt-6 space-y-4 border-t border-zinc-800 pt-4">
+      <p aria-live="polite" className="text-sm text-zinc-100">
+        {message}
+      </p>
+      <div className="flex flex-wrap gap-3">
+        {passed ? (
+          <>
+            <Button asChild>
+              <Link href="/map">Back to map</Link>
+            </Button>
+            <Button type="button" variant="outline" onClick={onReplay}>
+              Replay
+            </Button>
+          </>
+        ) : (
+          <Button type="button" onClick={onReplay}>
+            Try again
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
