@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { AuthField } from "@/components/auth/auth-field";
 import {
   GENERIC_ERROR_MESSAGE,
-  signUpErrorMessage,
+  mapAuthError,
   welcomeName,
 } from "@/components/auth/auth-errors";
 import { Spinner } from "@/components/auth/spinner";
@@ -25,6 +25,10 @@ export function SignUpForm() {
   const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [serverFields, setServerFields] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
   const [pending, setPending] = useState(false);
 
   function visible(field: FieldName) {
@@ -33,18 +37,26 @@ export function SignUpForm() {
 
   const errors = {
     name: visible("name") ? nameError(values.name) : undefined,
-    email: visible("email") ? emailError(values.email) : undefined,
-    password: visible("password") ? passwordError(values.password) : undefined,
+    email:
+      (visible("email") ? emailError(values.email) : undefined) ??
+      serverFields.email,
+    password:
+      (visible("password") ? passwordError(values.password) : undefined) ??
+      serverFields.password,
   };
 
   function update(field: FieldName, value: string) {
     setValues((current) => ({ ...current, [field]: value }));
+    if (field === "email" || field === "password") {
+      setServerFields((current) => ({ ...current, [field]: undefined }));
+    }
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
     setServerError(null);
+    setServerFields({});
 
     if (
       nameError(values.name) ||
@@ -63,7 +75,9 @@ export function SignUpForm() {
       });
 
       if (result.error) {
-        setServerError(signUpErrorMessage(result.error));
+        const mapped = mapAuthError(result.error);
+        setServerError(mapped.alert);
+        setServerFields({ email: mapped.email, password: mapped.password });
         setPending(false);
         return;
       }

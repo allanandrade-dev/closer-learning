@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { AuthField } from "@/components/auth/auth-field";
-import { SIGN_IN_ERROR_MESSAGE, welcomeName } from "@/components/auth/auth-errors";
+import {
+  GENERIC_ERROR_MESSAGE,
+  mapAuthError,
+  welcomeName,
+} from "@/components/auth/auth-errors";
 import { safeRedirectPath } from "@/components/auth/safe-redirect";
 import { Spinner } from "@/components/auth/spinner";
 import { emailError, passwordError } from "@/components/auth/validation";
@@ -26,6 +30,10 @@ export function SignInForm({ nextPath }: SignInFormProps) {
   const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [serverFields, setServerFields] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
   const [pending, setPending] = useState(false);
 
   function visible(field: FieldName) {
@@ -33,18 +41,24 @@ export function SignInForm({ nextPath }: SignInFormProps) {
   }
 
   const errors = {
-    email: visible("email") ? emailError(values.email) : undefined,
-    password: visible("password") ? passwordError(values.password) : undefined,
+    email:
+      (visible("email") ? emailError(values.email) : undefined) ??
+      serverFields.email,
+    password:
+      (visible("password") ? passwordError(values.password) : undefined) ??
+      serverFields.password,
   };
 
   function update(field: FieldName, value: string) {
     setValues((current) => ({ ...current, [field]: value }));
+    setServerFields((current) => ({ ...current, [field]: undefined }));
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
     setServerError(null);
+    setServerFields({});
 
     if (emailError(values.email) || passwordError(values.password)) {
       return;
@@ -57,8 +71,16 @@ export function SignInForm({ nextPath }: SignInFormProps) {
         password: values.password,
       });
 
-      if (result.error || !result.data) {
-        setServerError(SIGN_IN_ERROR_MESSAGE);
+      if (result.error) {
+        const mapped = mapAuthError(result.error);
+        setServerError(mapped.alert);
+        setServerFields({ email: mapped.email, password: mapped.password });
+        setPending(false);
+        return;
+      }
+
+      if (!result.data) {
+        setServerError(GENERIC_ERROR_MESSAGE);
         setPending(false);
         return;
       }
@@ -68,7 +90,7 @@ export function SignInForm({ nextPath }: SignInFormProps) {
       );
       router.push(safeRedirectPath(nextPath));
     } catch {
-      setServerError(SIGN_IN_ERROR_MESSAGE);
+      setServerError(GENERIC_ERROR_MESSAGE);
       setPending(false);
     }
   }
