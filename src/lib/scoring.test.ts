@@ -1,9 +1,11 @@
 import { expect, test } from "vitest";
 import {
+  applyAttempt,
   distanceScore,
   isPassing,
   levelOneScore,
   type LevelRules,
+  type Progress,
 } from "@/lib/scoring";
 
 const vectors: LevelRules = {
@@ -102,6 +104,107 @@ test("search rank 3 passes, rank 4 and not-found fail", () => {
   expect(isPassing(4, search)).toBe(false);
   expect(isPassing(Number.POSITIVE_INFINITY, search)).toBe(false);
   expect(isPassing(0, search)).toBe(false);
+});
+
+test("first pass awards the level XP", () => {
+  expect(applyAttempt(null, 70, vectors)).toEqual({
+    passed: true,
+    bestScore: 70,
+    xpAwarded: 100,
+  });
+  expect(applyAttempt(null, 2, embeddings)).toEqual({
+    passed: true,
+    bestScore: 2,
+    xpAwarded: 150,
+  });
+});
+
+test("a second pass awards 0 XP and keeps xpEarned", () => {
+  const progress: Progress = { passed: true, bestScore: 70, xpEarned: 100 };
+
+  const result = applyAttempt(progress, 70, vectors);
+
+  expect(result).toEqual({ passed: true, bestScore: 70, xpAwarded: 0 });
+  expect(progress.xpEarned).toBe(100);
+});
+
+test("a higher score on retry updates bestScore but not XP", () => {
+  const progress: Progress = { passed: true, bestScore: 70, xpEarned: 100 };
+
+  expect(applyAttempt(progress, 95, vectors)).toEqual({
+    passed: true,
+    bestScore: 95,
+    xpAwarded: 0,
+  });
+});
+
+test("a fail awards 0, keeps the previous best, and does not un-pass", () => {
+  const progress: Progress = { passed: true, bestScore: 80, xpEarned: 100 };
+
+  expect(applyAttempt(progress, 40, vectors)).toEqual({
+    passed: true,
+    bestScore: 80,
+    xpAwarded: 0,
+  });
+});
+
+test("a worse failing score keeps the previous best", () => {
+  const progress: Progress = { passed: false, bestScore: 50, xpEarned: 0 };
+
+  expect(applyAttempt(progress, 20, vectors)).toEqual({
+    passed: false,
+    bestScore: 50,
+    xpAwarded: 0,
+  });
+});
+
+test("a better failing score updates bestScore without XP", () => {
+  const progress: Progress = { passed: false, bestScore: 40, xpEarned: 0 };
+
+  expect(applyAttempt(progress, 61, vectors)).toEqual({
+    passed: false,
+    bestScore: 61,
+    xpAwarded: 0,
+  });
+});
+
+test("search keeps the lowest rank and stores 0 when nothing is found", () => {
+  const missed = applyAttempt(null, Number.POSITIVE_INFINITY, search);
+  expect(missed).toEqual({ passed: false, bestScore: 0, xpAwarded: 0 });
+
+  const rank4 = applyAttempt(
+    { passed: false, bestScore: missed.bestScore, xpEarned: 0 },
+    4,
+    search,
+  );
+  expect(rank4).toEqual({ passed: false, bestScore: 4, xpAwarded: 0 });
+
+  const rank3 = applyAttempt(
+    { passed: false, bestScore: rank4.bestScore, xpEarned: 0 },
+    3,
+    search,
+  );
+  expect(rank3).toEqual({ passed: true, bestScore: 3, xpAwarded: 200 });
+
+  const laterMiss = applyAttempt(
+    { passed: true, bestScore: rank3.bestScore, xpEarned: 200 },
+    0,
+    search,
+  );
+  expect(laterMiss).toEqual({ passed: true, bestScore: 3, xpAwarded: 0 });
+});
+
+test("applyAttempt does not mutate its input", () => {
+  const progress: Progress = Object.freeze({
+    passed: true,
+    bestScore: 80,
+    xpEarned: 100,
+  });
+
+  const result = applyAttempt(progress, 90, vectors);
+
+  expect(progress).toEqual({ passed: true, bestScore: 80, xpEarned: 100 });
+  expect(result).toEqual({ passed: true, bestScore: 90, xpAwarded: 0 });
 });
 
 test("distanceScore rejects non-finite coordinates", () => {

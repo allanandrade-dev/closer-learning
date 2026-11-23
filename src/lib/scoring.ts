@@ -66,3 +66,56 @@ export function isPassing(score: number, level: LevelRules): boolean {
 
   return Number.isFinite(score) && score >= level.passMark;
 }
+
+export type AttemptResult = {
+  passed: boolean;
+  bestScore: number;
+  xpAwarded: number;
+};
+
+/**
+ * A found search rank is a finite number >= 1.
+ * Not-found (Infinity, 0, or any other non-rank) is not a candidate for best.
+ */
+function foundRank(score: number): number | null {
+  if (!Number.isFinite(score) || score < 1) return null;
+  return score;
+}
+
+function nextBestScore(
+  previous: number | undefined,
+  score: number,
+  challengeType: ChallengeType,
+): number {
+  if (challengeType !== "search") {
+    if (previous === undefined) return score;
+    return score > previous ? score : previous;
+  }
+
+  const next = foundRank(score);
+  const prev = previous === undefined ? null : foundRank(previous);
+  // Not-found is stored as 0. Infinity is not a safe integer to persist, and 0
+  // is worse than every real rank, so the next found rank replaces it.
+  if (next === null) return prev ?? 0;
+  if (prev === null) return next;
+  return Math.min(prev, next);
+}
+
+export function applyAttempt(
+  progress: Progress | null,
+  score: number,
+  level: LevelRules,
+): AttemptResult {
+  const attemptPassed = isPassing(score, level);
+  const alreadyPassed = progress?.passed ?? false;
+
+  return {
+    passed: alreadyPassed || attemptPassed,
+    bestScore: nextBestScore(
+      progress === null ? undefined : progress.bestScore,
+      score,
+      level.challengeType,
+    ),
+    xpAwarded: alreadyPassed || !attemptPassed ? 0 : level.xpReward,
+  };
+}
