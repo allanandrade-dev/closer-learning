@@ -95,7 +95,8 @@ test("number inputs move the arrow and update the readout", () => {
   setAxis("x", 2.5);
   setAxis("y", 1.5);
 
-  expect(screen.getByText("you = [2.5, 1.5]   distance = 0.71")).toBeInTheDocument();
+  const readout = screen.getByText((text) => text === "you = [2.5, 1.5] distance = 0.71");
+  expect(readout.textContent).toBe("you = [2.5, 1.5]   distance = 0.71");
   const head = screen.getByRole("slider", { name: "Arrow head" });
   expect(head).toHaveAttribute("cx", "25");
   expect(head).toHaveAttribute("cy", "-15");
