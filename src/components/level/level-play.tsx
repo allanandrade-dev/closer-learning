@@ -4,6 +4,10 @@ import { useState } from "react";
 
 import type { LessonCard } from "@/content/levels";
 import { ChallengeSlot } from "@/components/level/challenge-slot";
+import {
+  EmbeddingsChallenge,
+  type Level2Round,
+} from "@/components/level/embeddings-challenge";
 import { LessonCards } from "@/components/level/lesson-cards";
 import { VectorsChallenge } from "@/components/level/vectors-challenge";
 
@@ -12,11 +16,13 @@ export function LevelPlay({
   challengeType,
   passed,
   bestScore,
+  rounds = [],
 }: {
   cards: readonly LessonCard[];
   challengeType: string;
   passed: boolean;
   bestScore: number;
+  rounds?: readonly Level2Round[];
 }) {
   const [lessonDone, setLessonDone] = useState(false);
 
@@ -28,8 +34,13 @@ export function LevelPlay({
         lessonDone={lessonDone}
         passed={passed}
         bestScore={bestScore}
+        prompt={challengeType === "embeddings" ? null : undefined}
       >
-        {challengeType === "vectors" ? <VectorsChallenge alreadyPassed={passed} /> : null}
+        {challengeType === "vectors" ? (
+          <VectorsChallenge alreadyPassed={passed} />
+        ) : challengeType === "embeddings" ? (
+          <EmbeddingsChallenge rounds={rounds} alreadyPassed={passed} />
+        ) : null}
       </ChallengeSlot>
     </main>
   );

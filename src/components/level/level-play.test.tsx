@@ -15,6 +15,15 @@ vi.mock("@/server/level1-actions", () => ({
   submitLevel1: vi.fn(),
 }));
 
+vi.mock("@/server/level2-actions", () => ({
+  checkLevel2Round: vi.fn(),
+  submitLevel2: vi.fn(),
+}));
+
+vi.mock("@/server/level2-rounds", () => ({
+  getLevel2Rounds: vi.fn(),
+}));
+
 import "@testing-library/jest-dom/vitest";
 
 afterEach(() => {
@@ -46,4 +55,31 @@ test("skipping the lesson enables the challenge", async () => {
   );
   expect(screen.queryByText("Finish the lesson or skip to start.")).not.toBeInTheDocument();
   expect(screen.getByText("Challenge coming next.")).toBeInTheDocument();
+});
+
+test("the embeddings challenge receives the rounds passed from the page", async () => {
+  const user = userEvent.setup();
+  render(
+    <LevelPlay
+      cards={cards}
+      challengeType="embeddings"
+      passed={false}
+      bestScore={0}
+      rounds={[
+        {
+          roundId: 1,
+          target: "king",
+          candidates: ["banana", "laptop", "queen", "river"],
+        },
+      ]}
+    />,
+  );
+
+  await user.click(screen.getByRole("button", { name: "Skip to challenge" }));
+
+  expect(
+    screen.getByRole("heading", { name: /Which word is closest in meaning to king/ }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "queen" })).toBeInTheDocument();
+  expect(screen.queryByText("Challenge coming next.")).not.toBeInTheDocument();
 });

@@ -14,7 +14,8 @@ type ChallengeSlotProps = {
   lessonDone: boolean;
   passed: boolean;
   bestScore: number;
-  prompt?: string;
+  /** Pass null when the challenge child renders its own prompt. */
+  prompt?: string | null;
   /**
    * Real challenge UI. VDB-7 and VDB-9 pass their plot here.
    * With no children, the switch below renders a placeholder.
@@ -41,7 +42,8 @@ export function ChallengeSlot({
   prompt,
   children,
 }: ChallengeSlotProps) {
-  const heading = prompt ?? PROMPTS[challengeType] ?? "Challenge";
+  const heading =
+    prompt === undefined ? (PROMPTS[challengeType] ?? "Challenge") : prompt;
 
   return (
     <div role="group" aria-label="Challenge" aria-disabled={!lessonDone} className="relative">
@@ -57,7 +59,9 @@ export function ChallengeSlot({
           </p>
         ) : null}
         <div inert={lessonDone ? undefined : true}>
-          <h2 className="text-xl font-semibold tracking-tight">{heading}</h2>
+          {heading ? (
+            <h2 className="text-xl font-semibold tracking-tight">{heading}</h2>
+          ) : null}
           {children == null ? (
             <div className="mt-4 flex aspect-square max-h-[560px] w-full max-w-[560px] items-center justify-center rounded-lg border border-dashed border-zinc-700">
               <ChallengePlaceholder challengeType={challengeType} />
