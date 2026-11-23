@@ -2,10 +2,18 @@
 
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 
 import type { LessonCard } from "@/content/levels";
 import { LevelPlay } from "@/components/level/level-play";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+
+vi.mock("@/server/level1-actions", () => ({
+  submitLevel1: vi.fn(),
+}));
 
 import "@testing-library/jest-dom/vitest";
 
