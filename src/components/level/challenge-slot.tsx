@@ -58,9 +58,13 @@ export function ChallengeSlot({
         ) : null}
         <div inert={lessonDone ? undefined : true}>
           <h2 className="text-xl font-semibold tracking-tight">{heading}</h2>
-          <div className="mt-4 flex aspect-square max-h-[560px] w-full max-w-[560px] items-center justify-center rounded-lg border border-dashed border-zinc-700">
-            {children ?? <ChallengePlaceholder challengeType={challengeType} />}
-          </div>
+          {children == null ? (
+            <div className="mt-4 flex aspect-square max-h-[560px] w-full max-w-[560px] items-center justify-center rounded-lg border border-dashed border-zinc-700">
+              <ChallengePlaceholder challengeType={challengeType} />
+            </div>
+          ) : (
+            <div className="mt-4">{children}</div>
+          )}
         </div>
       </Card>
       {lessonDone ? null : (

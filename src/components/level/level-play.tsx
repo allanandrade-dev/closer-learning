@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { LessonCard } from "@/content/levels";
 import { ChallengeSlot } from "@/components/level/challenge-slot";
 import { LessonCards } from "@/components/level/lesson-cards";
+import { VectorsChallenge } from "@/components/level/vectors-challenge";
 
 export function LevelPlay({
   cards,
@@ -27,7 +28,9 @@ export function LevelPlay({
         lessonDone={lessonDone}
         passed={passed}
         bestScore={bestScore}
-      />
+      >
+        {challengeType === "vectors" ? <VectorsChallenge alreadyPassed={passed} /> : null}
+      </ChallengeSlot>
     </main>
   );
 }
