@@ -16,6 +16,7 @@
     "db:push": "drizzle-kit push",
     "db:setup": "pnpm db:vector && pnpm db:push",
     "db:seed": "tsx scripts/seed-levels.ts",
+    "db:seed-words": "tsx scripts/seed-words.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
