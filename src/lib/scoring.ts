@@ -26,3 +26,43 @@ export function distanceScore(
 
   return { distance, score };
 }
+
+export type ChallengeType = "vectors" | "embeddings" | "search";
+
+export type LevelRules = {
+  challengeType: ChallengeType;
+  passMark: number;
+  xpReward: number;
+};
+
+/** Stored attempt summary. Pass `null` when the player has no row yet. */
+export type Progress = {
+  passed: boolean;
+  bestScore: number;
+  xpEarned: number;
+};
+
+/** Rounded mean of the three vector-round scores. */
+export function levelOneScore(rounds: number[]): number {
+  if (!Array.isArray(rounds) || rounds.length !== 3) {
+    throw new Error("levelOneScore expects exactly 3 round scores");
+  }
+
+  for (const round of rounds) {
+    if (typeof round !== "number" || !Number.isFinite(round)) {
+      throw new Error("levelOneScore requires finite round scores");
+    }
+  }
+
+  return Math.round((rounds[0] + rounds[1] + rounds[2]) / 3);
+}
+
+export function isPassing(score: number, level: LevelRules): boolean {
+  if (level.challengeType === "search") {
+    // 1-based rank. Not-found is Infinity or 0 and fails.
+    // A found document passes when its rank is at least as good as passMark.
+    return Number.isFinite(score) && score >= 1 && score <= level.passMark;
+  }
+
+  return Number.isFinite(score) && score >= level.passMark;
+}
