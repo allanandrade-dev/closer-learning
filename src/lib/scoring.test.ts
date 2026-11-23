@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import {
   applyAttempt,
   distanceScore,
+  isLevelUnlocked,
   isPassing,
   levelOneScore,
   type LevelRules,
@@ -205,6 +206,35 @@ test("applyAttempt does not mutate its input", () => {
 
   expect(progress).toEqual({ passed: true, bestScore: 80, xpEarned: 100 });
   expect(result).toEqual({ passed: true, bestScore: 90, xpAwarded: 0 });
+});
+
+test("level 1 is unlocked before anything is passed", () => {
+  expect(isLevelUnlocked(1, [])).toBe(true);
+  expect(isLevelUnlocked(1, new Set<number>())).toBe(true);
+});
+
+test("level 2 unlocks only after level 1 is passed", () => {
+  expect(isLevelUnlocked(2, [])).toBe(false);
+  expect(isLevelUnlocked(2, [1])).toBe(true);
+  expect(isLevelUnlocked(2, new Set([1]))).toBe(true);
+  expect(isLevelUnlocked(2, [2])).toBe(false);
+});
+
+test("level 3 unlocks only after level 2 is passed", () => {
+  expect(isLevelUnlocked(3, [])).toBe(false);
+  expect(isLevelUnlocked(3, [1])).toBe(false);
+  expect(isLevelUnlocked(3, [2])).toBe(true);
+  expect(isLevelUnlocked(3, new Set([1, 2]))).toBe(true);
+});
+
+test("isLevelUnlocked does not mutate passed orders", () => {
+  const orders = [1, 2];
+  const passed = new Set([1, 2]);
+
+  expect(isLevelUnlocked(3, orders)).toBe(true);
+  expect(isLevelUnlocked(3, passed)).toBe(true);
+  expect(orders).toEqual([1, 2]);
+  expect([...passed]).toEqual([1, 2]);
 });
 
 test("distanceScore rejects non-finite coordinates", () => {

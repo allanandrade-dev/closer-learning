@@ -119,3 +119,17 @@ export function applyAttempt(
     xpAwarded: alreadyPassed || !attemptPassed ? 0 : level.xpReward,
   };
 }
+
+/** Level 1 is always open. Level n opens once level n - 1 has been passed. */
+export function isLevelUnlocked(
+  levelOrder: number,
+  passedOrders: Set<number> | number[],
+): boolean {
+  if (levelOrder === 1) return true;
+  if (!Number.isInteger(levelOrder) || levelOrder < 1) return false;
+
+  const previous = levelOrder - 1;
+  return passedOrders instanceof Set
+    ? passedOrders.has(previous)
+    : passedOrders.includes(previous);
+}
